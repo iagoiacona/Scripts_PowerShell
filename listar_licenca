@@ -1,0 +1,71 @@
+Instalar o módulo Microsof.Graph
+Install-Module Microsoft.Graph
+#Executar em caso de erro do Connect
+Set-ExecutionPolicy -ExecutionPolicy Bypass
+#Install-Module Microsoft.Graph.Authentication -force
+#Import-Module Microsoft.Graph.Authentication
+
+
+#Conecta ao Tenant
+Connect-MgGraph -TenantId fe284b6f-c6d2-4028-badb-7d0c22aef0ae
+
+
+$Data = Get-Date
+Write-Host Iniciando a Coleta $Data
+$Lista = @()
+ 
+$Caminho = "C:\Scripts\"
+$File = "license_Geral_" + (Get-Date -Format ddMMyyyy) + ".csv"
+$Arquivo = $Caminho+$File
+ 
+ 
+$licenses = Get-MgSubscribedSku -All | Where {$_.ConsumedUnits -ge 1}
+ 
+Foreach ($Line in $licenses) {
+       $PerSku = Get-MgSubscribedSku -All | Where SkuPartNumber -eq $line.SkuPartNumber
+       Foreach ($Usuarios_Per_License in $PerSku) {
+           $Usuarios = (Get-MgUser -Filter "accountEnabled eq true and assignedLicenses/any(x:x/skuId eq $($Usuarios_Per_License.SkuId) )" -ConsistencyLevel eventual -CountVariable licensedUserCount -All -Property DisplayName,UserPrincipalName,CompanyName,Department,JobTitle,Mail,PostalCode) | Select DisplayName,userPrincipalName,CompanyName,Department,JobTitle,Mail,PostalCode
+           $NomeLicenca = $Usuarios_Per_License.SkuPartNumber
+           $Lista += $Usuarios | Select-Object *,@{Name="Licença";Expression={"$NomeLicenca"}}
+          
+       }
+}
+ 
+$Lista | Export-Csv -Path $Arquivo -Delimiter ";" -NoClobber -NoTypeInformation -Encoding UTF8 -Append -Force
+ 
+Start-Sleep -Seconds 10
+ 
+(Get-Content -Path $Arquivo) -replace "STREAM", "Microsoft Stream" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "POWER_BI_PRO", "Power BI Pro" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "ENTERPRISEPACK", "Office 365 E3" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "Microsoft_365_E3_(no_Teams)", "Microsoft 365 E3 (no Teams)" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "FLOW_FREE", "Microsoft Power Automate Free" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "CCIBOTS_PRIVPREV_VIRAL", "Microsoft Copilot Studio Viral Trial" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "SPB", "Microsoft 365 Business Premium" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "POWERAPPS_VIRAL", "Microsoft Power Apps Plan 2 Trial" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "EXCHANGESTANDARD", "Exchange Online (Plan 1)" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "O365_BUSINESS_PREMIUM", "Microsoft 365 Business Standard" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "POWER_BI_STANDARD", "Microsoft Fabric (Free)" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "PBI_PREMIUM_PER_USER", "Power BI Premium Per User" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "O365_BUSINESS_ESSENTIALS", "Microsoft 365 Business Basic" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "PROJECTPROFESSIONAL", "Planner and Project Plan 3" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "EXCHANGEENTERPRISE", "Exchange Online (PLAN 2)" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "Teams_Premium_(for_Departments)", "Teams Premium (for Departments)" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "POWERAPPS_DEV", "Microsoft PowerApps for Developer" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "O365_BUSINESS", "Microsoft 365 Apps for Business" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "Microsoft_365_Copilot", "Copilot for Microsoft 365" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "WINDOWS_STORE", "Windows Store for Business" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "Power_Pages_vTrial_for_Makers", "Power Pages vTrial for Makers" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "TEAMS_ESSENTIALS_AAD", "Microsoft Teams Essentials" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "RMSBASIC", "Rights Management Service Basic Content Protection" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "MDATP_XPLAT","Microsoft Defender for Endpoint P2_XPLAT" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "Microsoft_Teams_Premium","Microsoft Teams Premium Introductory Pricing" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "Microsoft_Teams_Exploratory_Dept","Microsoft Teams Exploratory Dept" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "Microsoft_Teams_Rooms_Basic","Microsoft Teams Rooms Basic" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "Microsoft_Teams_Enterprise_New","Microsoft Teams Enterprise" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "Microsoft_365_F3_(no_Teams)","Microsoft 365 F3 (no_Teams)" | Set-Content -Path $Arquivo
+(Get-Content -Path $Arquivo) -replace "Teams_Premium_(for_Departments)","Teams Premium (for_Departments)" | Set-Content -Path $Arquivo
+ 
+ 
+$Data = Get-Date
+Write-Host Finalizado a Coleta $Data
