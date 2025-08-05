@@ -9,11 +9,12 @@ Set-ExecutionPolicy -ExecutionPolicy Bypass
 #Conecta ao Tenant
 Connect-MgGraph -TenantId fe284b6f-c6d2-4028-badb-7d0c22aef0ae
 
-
+#Limpar lista
 $Data = Get-Date
 Write-Host Iniciando a Coleta $Data
 $Lista = @()
- 
+
+#Listar os usuários e enviar para o arquivo
 $Caminho = "C:\Scripts\"
 $File = "license_Geral_" + (Get-Date -Format ddMMyyyy) + ".csv"
 $Arquivo = $Caminho+$File
