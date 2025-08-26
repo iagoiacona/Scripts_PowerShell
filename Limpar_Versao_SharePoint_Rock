@@ -1,6 +1,6 @@
 #Parte1 
 #Config Variables
-$SiteURL "https://rockencantech.sharepoint.com/sites/marketingll"
+$SiteURL = "https://rockencantech.sharepoint.com/sites/marketingll"
 $ClientID = "9d6b1a14-3b6a-4f65-babd-3119c5b79898"
 $ListName="Shared Documents"
 $VersionsToKeep = 10
