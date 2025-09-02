@@ -1,0 +1,74 @@
+# Script PowerShell corrigido para extrair usuários com licenças Business
+
+# 1. Conecta ao Tenant
+Connect-MgGraph -TenantId fe284b6f-c6d2-4028-badb-7d0c22aef0ae
+
+# 2. Define caminho e arquivo de saída
+$Caminho = "C:\Scripts\"
+$File = "license_Business_" + (Get-Date -Format ddMMyyyy) + ".csv"
+$Arquivo = $Caminho + $File
+
+# 3. Define as licenças alvo
+$TargetLicenses = @(
+    "O365_BUSINESS_ESSENTIALS", # Microsoft 365 Business Basic
+    "O365_BUSINESS",            # Microsoft 365 Apps for Business
+    "O365_BUSINESS_PREMIUM"     # Microsoft 365 Business Standard
+)
+
+# 4. Limpa lista de saída
+$Lista = @()
+
+Write-Host "Iniciando a coleta de usuários com licenças Business..."
+
+# 5. Carrega mapeamento de SkuId -> SkuPartNumber
+$SkuMap = @{}
+(Get-MgSubscribedSku -All).ForEach({
+    $SkuMap[$_.SkuId] = $_.SkuPartNumber
+})
+
+# 6. Busca todos os usuários ativos
+$Users = Get-MgUser -Filter "accountEnabled eq true" -All `
+    -Property DisplayName,UserPrincipalName,CompanyName,Department,JobTitle,Mail,PostalCode,assignedLicenses
+
+# 7. Processa cada usuário
+Foreach ($User in $Users) {
+    $UserLicenses = @()
+
+    Foreach ($License in $User.assignedLicenses) {
+        $SkuPartNumber = $SkuMap[$License.SkuId]
+        If ($SkuPartNumber -in $TargetLicenses) {
+            $UserLicenses += $SkuPartNumber
+        }
+    }
+
+    # Se o usuário tiver pelo menos uma das licenças alvo
+    If ($UserLicenses.Count -gt 0) {
+        Foreach ($Lic in $UserLicenses) {
+            $Lista += [PSCustomObject]@{
+                DisplayName       = $User.DisplayName
+                UserPrincipalName = $User.UserPrincipalName
+                CompanyName       = $User.CompanyName
+                Department        = $User.Department
+                JobTitle          = $User.JobTitle
+                Mail              = $User.Mail
+                PostalCode        = $User.PostalCode
+                LicencaGrupo      = Switch ($Lic) {
+                    "O365_BUSINESS_ESSENTIALS" { "BASIC" }
+                    "O365_BUSINESS"            { "BASIC + APP FOR BUSINESS" }
+                    "O365_BUSINESS_PREMIUM"    { "STANDARD" }
+                    Default { $Lic }
+                }
+            }
+        }
+    }
+}
+
+# 8. Exporta para CSV
+If ($Lista.Count -gt 0) {
+    $Lista | Export-Csv -Path $Arquivo -Delimiter ";" -NoTypeInformation -Encoding UTF8 -Force
+    Write-Host "Lista exportada para: $Arquivo"
+} Else {
+    Write-Host "Nenhum usuário encontrado com as licenças alvo."
+}
+
+Write-Host "Coleta finalizada."
