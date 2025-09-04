@@ -1,0 +1,63 @@
+# ======================================================================
+# Parte1 - Configurações
+# ======================================================================
+# URL do OneDrive do usuário (ajustada para o e-mail informado)
+$SiteURL = "https://yandehbr-my.sharepoint.com/personal/doc_int-operacoes-vendas_yandeh_com_br"
+
+# Client ID do App registrado no Azure AD (se não tiver, usar conexão interativa)
+$ClientID = "6fa07dc9-b5b3-4062-9bf6-f3af19593db0"
+
+# Nome da biblioteca do OneDrive (normalmente "Documents" ou "Documentos")
+$ListName = "Documents"
+
+# Quantas versões manter
+$VersionsToKeep = 15
+
+# ======================================================================
+# Parte2 - Conexão
+# ======================================================================
+# Conecta ao PnP Online
+# Se não quiser usar ClientID, pode conectar assim:
+# Connect-PnPOnline -Url $SiteURL -Interactive
+Connect-PnPOnline -Url $SiteURL -ClientId $ClientID -Interactive
+
+# ======================================================================
+# Parte3 - Obter Itens
+# ======================================================================
+# Contexto PnP
+$Ctx = Get-PnPContext
+
+# Pegar todos os arquivos (excluindo pastas)
+$ListItems = Get-PnPListItem -List $ListName -PageSize 500 -Fields Author, Editor, Created, File_x0020_Type -ScriptBlock `
+       { Param($items) $global:counter += $items.Count; Write-Progress -Activity `
+            "Obtendo documentos da biblioteca '$($List.Title)'" -Status "Coletados $global:Counter de $($List.ItemCount)";} | Where-Object {$_.FileSystemObjectType -eq "File"}
+
+# ======================================================================
+# Parte4 - Limpeza de versões antigas
+# ======================================================================
+ForEach ($Item in $ListItems) {
+    # Obter versões do arquivo
+    $File = $Item.File
+    $Versions = $File.Versions
+    $Ctx.Load($File)
+    $Ctx.Load($Versions)
+    $Ctx.ExecuteQuery()
+
+    Write-Host -f Yellow "Verificando arquivo:" $File.Name
+
+    $VersionsCount = $Versions.Count
+    $VersionsToDelete = $VersionsCount - $VersionsToKeep
+
+    If ($VersionsToDelete -gt 0) {
+        Write-Host -f Cyan "`t Total de versões do arquivo:" $VersionsCount
+        
+        # Deleta versões mais antigas
+        For ($i = 0; $i -lt $VersionsToDelete; $i++) {
+            Write-Host -f Cyan "`t Deletando versão:" $Versions[0].VersionLabel
+            $Versions[0].DeleteObject()
+        }
+
+        $Ctx.ExecuteQuery()
+        Write-Host -f Green "`t Versões antigas foram removidas para o arquivo:" $File.Name
+    }
+}
