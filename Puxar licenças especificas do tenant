@@ -5,7 +5,7 @@ Connect-MgGraph -TenantId fe284b6f-c6d2-4028-badb-7d0c22aef0ae
 
 # 2. Define caminho e arquivo de saída
 $Caminho = "C:\Scripts\"
-$File = "license_Business_" + (Get-Date -Format ddMMyyyy) + ".csv"
+$File = "licenses_users_" + (Get-Date -Format ddMMyyyy) + ".csv"
 $Arquivo = $Caminho + $File
 
 # 3. Define as licenças alvo
