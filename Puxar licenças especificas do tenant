@@ -51,7 +51,6 @@ Foreach ($User in $Users) {
                 Department        = $User.Department
                 JobTitle          = $User.JobTitle
                 Mail              = $User.Mail
-                PostalCode        = $User.PostalCode
                 LicencaGrupo      = Switch ($Lic) {
                     "O365_BUSINESS_ESSENTIALS" { "BASIC" }
                     "O365_BUSINESS"            { "BASIC + APP FOR BUSINESS" }
