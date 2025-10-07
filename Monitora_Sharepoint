@@ -1,0 +1,133 @@
+# ============================
+# Variáveis de Conexão
+# ============================
+$ClientId     = "b41f1ff5-98c7-48d2-bf90-0fdb2638e8a3"
+$ClientSecret = "5kV8Q~1Z3qLmD5c4zSyrFDU27JlJW4XKfKkjzax6"
+$adminURL     = "https://yandehbr-admin.sharepoint.com"
+
+# ============================
+# Variáveis de E-mail
+# ============================
+$EmailFrom        = "monitora.sharepoint@hindiana.com.br"
+$EmailTo          = "field.service@hindiana.com.br"
+$EmailUser        = "monitora.sharepoint@hindiana.com.br"
+$EmailPass        = "dbrfhzwmfxhznvxz"
+$SMTPServer       = "smtp.office365.com"
+$SMTPPort         = 587
+$PercentualAlerta = 80   # percentual de alerta por site
+
+# ============================
+# Conectar ao SharePoint
+# ============================
+Write-Host "Conectando ao SharePoint Admin Center..." -ForegroundColor Yellow
+Connect-PnPOnline -Url $adminURL -ClientId $ClientId -ClientSecret $ClientSecret
+Write-Host "Conectado com sucesso em: $adminURL" -ForegroundColor Green
+
+# ============================
+# Obter sites e monitorar
+# ============================
+try {
+    $sites = Get-PnPTenantSite -IncludeOneDriveSites -ErrorAction Stop
+    $sitesCriticos = @()
+    
+    $TotalArmazenamento = 0
+    $TotalUsado        = 0
+
+    foreach ($site in $sites) {
+        $TotalMB = $site.StorageQuota
+        $UsadoMB = $site.StorageUsageCurrent
+
+        $TotalArmazenamento += $TotalMB
+        $TotalUsado        += $UsadoMB
+
+        if ($TotalMB -gt 0) {
+            $PercentualSite = [math]::Round(($UsadoMB / $TotalMB) * 100, 2)
+        } else { $PercentualSite = 0 }
+
+        switch -Wildcard ($site.Template) {
+            "GROUP*"                 { $Tipo = "Team Site (Microsoft 365 Group)" }
+            "STS*"                   { $Tipo = "Team Site (Clássico)" }
+            "SITEPAGEPUBLISHING*"    { $Tipo = "Communication Site" }
+            "SPSPERS*"               { $Tipo = "OneDrive" }
+            default                  { $Tipo = $site.Template }
+        }
+
+        # Verificar sites críticos (>80%)
+        if ($PercentualSite -ge $PercentualAlerta) {
+            $sitesCriticos += [PSCustomObject]@{
+                "URL do Site"         = $site.Url
+                "Tipo de Site"        = $Tipo
+                "Armazenamento Total" = "$TotalMB MB"
+                "Armazenamento Usado" = "$UsadoMB MB"
+                "Uso (%)"             = "$PercentualSite %"
+            }
+        }
+    }
+
+    # Percentual total do SharePoint
+    if ($TotalArmazenamento -gt 0) {
+        $PercentualTotal = [math]::Round(($TotalUsado / $TotalArmazenamento) * 100, 2)
+    } else { $PercentualTotal = 0 }
+
+    # ============================
+    # Montar corpo do e-mail HTML
+    # ============================
+    $EmailBody = "<h2>Relatório de Armazenamento SharePoint</h2>"
+
+    # Resumo total
+    $EmailBody += "<h3>Consumo total do SharePoint</h3>"
+    $EmailBody += "<p>Armazenamento Total: $TotalArmazenamento MB<br>"
+    $EmailBody += "Armazenamento Usado: $TotalUsado MB<br>"
+    $EmailBody += "Percentual Utilizado: <b style='color:" + 
+                  ($(if ($PercentualTotal -ge $PercentualAlerta) {"red"} else {"green"})) + "'>$PercentualTotal %</b></p>"
+
+    # Sites críticos
+    if ($sitesCriticos.Count -gt 0) {
+        $EmailBody += "<h3>Sites acima de 80%</h3>"
+        $EmailBody += "<table border='1' cellspacing='0' cellpadding='5'>"
+        $EmailBody += "<tr><th>URL do Site</th><th>Tipo</th><th>Armazenamento Total</th><th>Armazenamento Usado</th><th>Uso (%)</th></tr>"
+
+        foreach ($item in $sitesCriticos) {
+            $EmailBody += "<tr>"
+            $EmailBody += "<td>$($item.'URL do Site')</td>"
+            $EmailBody += "<td>$($item.'Tipo de Site')</td>"
+            $EmailBody += "<td>$($item.'Armazenamento Total')</td>"
+            $EmailBody += "<td>$($item.'Armazenamento Usado')</td>"
+            $EmailBody += "<td><b style='color:red'>$($item.'Uso (%)')</b></td>"
+            $EmailBody += "</tr>"
+        }
+        $EmailBody += "</table>"
+    } else {
+        $EmailBody += "<p>Nenhum site acima de 80% de uso.</p>"
+    }
+
+    # ============================
+    # Enviar e-mail
+    # ============================
+    Send-MailMessage -From $EmailFrom -To $EmailTo -Subject "ALERTA: SharePoint - Uso de Armazenamento" `
+                     -Body $EmailBody -BodyAsHtml -SmtpServer $SMTPServer -Port $SMTPPort `
+                     -UseSsl -Credential (New-Object System.Management.Automation.PSCredential($EmailUser, (ConvertTo-SecureString $EmailPass -AsPlainText -Force)))
+
+    Write-Host "E-mail enviado com sucesso." -ForegroundColor Green
+
+    # Exibir resumo no console
+    Write-Host "==============================="
+    Write-Host "Consumo total do SharePoint: $TotalUsado / $TotalArmazenamento MB ($PercentualTotal%)"
+    if ($sitesCriticos.Count -gt 0) {
+        Write-Host "Sites acima de 80%:"
+        $sitesCriticos | Format-Table -AutoSize
+    } else {
+        Write-Host "Nenhum site acima de 80%."
+    }
+    Write-Host "==============================="
+
+}
+catch {
+    Write-Host "Erro: $_" -ForegroundColor Red
+}
+
+# ============================
+# Desconectar
+# ============================
+Disconnect-PnPOnline
+Write-Host "Sessão desconectada." -ForegroundColor Yellow
