@@ -1,0 +1,34 @@
+# ================================
+# Script de Mapeamento de Impressoras
+# Servidor: 192.168.42.2
+# ================================
+
+$PrintServer = "\\192.168.42.2"
+$Printers = @(
+    "HP Expedicao 1",
+    "HP Expedicao 2",
+    "HP adm",
+    "HP Recebimento"
+)
+
+foreach ($Printer in $Printers) {
+
+    $FullPath = "$PrintServer\$Printer"
+
+    # Verifica se já está instalada
+    if (-not (Get-Printer | Where-Object { $_.Name -eq $Printer })) {
+
+        try {
+            Write-Host "Instalando impressora $Printer ..."
+            Add-Printer -ConnectionName $FullPath
+            Write-Host "✔ Impressora $Printer instalada com sucesso." -ForegroundColor Green
+        }
+        catch {
+            Write-Host "❌ Erro ao instalar $Printer" -ForegroundColor Red
+        }
+
+    }
+    else {
+        Write-Host "⚠ Impressora $Printer já está instalada."
+    }
+}
