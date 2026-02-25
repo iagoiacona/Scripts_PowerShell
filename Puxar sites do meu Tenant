@@ -1,0 +1,33 @@
+# ==============================
+# Configurações Iniciais
+# ==============================
+
+# URL do centro de administração do SharePoint (substitua pelo seu domínio)
+$AdminCenterURL = "https://SEU_DOMINIO-admin.sharepoint.com"
+
+# Conexão (interativa)
+Connect-PnPOnline -Url $AdminCenterURL -UseWebLogin
+# OU, se tiver app registration, use:
+# Connect-PnPOnline -Url $AdminCenterURL -ClientId "Seu-ClientID" -ClientSecret "Seu-ClientSecret" -Tenant "seu_tenant.onmicrosoft.com"
+
+# ==============================
+# Obter todos os sites
+# ==============================
+
+Write-Host "Coletando lista de sites do tenant..." -ForegroundColor Cyan
+
+# Obtém todos os sites e subsites
+$sites = Get-PnPTenantSite -IncludeOneDriveSites:$false -IncludePersonalSite:$false -Detailed
+
+# ==============================
+# Exibir e exportar resultados
+# ==============================
+
+# Mostra as primeiras linhas na tela
+$sites | Select-Object Title, Url, Template, Owner, StorageUsageCurrent | Format-Table
+
+# Exporta para CSV
+$ExportPath = "$env:USERPROFILE\Documents\SharePoint_Sites_List.csv"
+$sites | Select-Object Title, Url, Template, Owner, StorageUsageCurrent | Export-Csv -Path $ExportPath -NoTypeInformation -Encoding UTF8
+
+Write-Host "`nArquivo exportado para: $ExportPath" -ForegroundColor Green
