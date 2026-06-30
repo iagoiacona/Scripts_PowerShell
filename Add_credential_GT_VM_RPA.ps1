@@ -1,0 +1,1 @@
+﻿cmdkey /add:"192.168.42.4" /user:"192.168.42.4\adm.cd" /pass:"Amarelo@2020"
