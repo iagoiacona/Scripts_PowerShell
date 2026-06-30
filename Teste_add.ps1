@@ -1,0 +1,1 @@
+﻿Add-Printer -ConnectionName "\\192.168.42.3\HP Adm"

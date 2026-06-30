@@ -1,0 +1,37 @@
+Office
+Abrir o cmd como administrador, achar a pasta e digitar o seguinte comando
+
+setup.exe /configure configuration.xml
+
+----------------------------------------------------------------------------
+DESCONTINUADO
+
+SERVER : YH-ENCRYPT-01
+ENTERPRISE : Yandehsa
+USER NAME: Adminsp
+SENHA: trend@123
+----------------------------------------------------------------------------
+
+DESCONTINUADO
+lansweeper.yandeh.com.br
+bc4c4f02-5cb1-45e5-8120-4f46d18ee188
+----------------------------------------------------------------------------
+
+Forti
+
+VPN.SSO
+
+https://vpnssl.yandeh.com.br:10443/saml
+----------------------------------------------------------------------------
+47MHC-NFWCC-JD88M-V2FJP-BTBFK
+
+https://www.dell.com/support/contents/pt-br/article/product-support/self-support-knowledgebase/software-and-downloads/supportassist
+
+----------------------------------------------------------------------------
+1 - Abrir o cmd -> como administrador
+
+2 - net localgroup administradores nome.usuario /add
+
+3 - gpupdate /force
+
+
